@@ -73,6 +73,8 @@ The client provides a cross platform interface for interacting with one or more 
 
 - Install `Animal Zookeeper` from the .apk, .ipa, .exe, or .appimage files located under `client/*`. In the future, you will also be able to download the mobile apps directly from the App Store or Play Store.
 
+- (Coming soon:) Visit `https://computatrum.io/ainimal_zookeeper` in your browser.
+
 Next connect to a running AInimal Zookeeper server by entering the `server_url` and `server_port`. You may be prompted for a username and password.
 
 ## Server
