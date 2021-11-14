@@ -1,67 +1,72 @@
-# AInimal Zookeeper
+# **AI**nimal :tiger: Zookeeper
 
-A client and server to facilitate observing, interacting with, and managing AInimals (pronounced: ay-ni-mals). 
+A client and server to facilitate observing, interacting with, and managing AI systems in the wild.
 
-As heterogeneous, distributed, and exoitc AI systems (AInimals) continue to pervade the real world, it is incrinsingly important to stay closer in touch with them. AInimal Zookeeper provides a client and server to facilitate this interaction with the following features:
+As heterogeneous, distributed, and exoitc AI systems (**AI**nimals :tiger:) continue to pervade the real world, it is incrinsingly important to observe, care for, and stay in touch with them. **AI**nimal :tiger: Zookeeper provides a client and server to facilitate this interaction with the following features:
 
 - a cross-platform (iOS, Android, web, desktop) react-native client which allows users to:
 
-- view saved AInimals and their attributes
+- launch, terminate, save, delete of models
 
-- launch, terminate, save, delete, and change running state (online training and inference, offline training only, online inference only, paused) of AInimals
+- change running state (online training and inference, offline training only, online inference only, paused) of launched models 
 
-- enable observing, overriding, recording, and replaying input modalities, output modalities, activations, weights, and system health at periodic intervals
+- view saved model architecture, parameters, and attributes
 
-- federated user access to the above features
+- observe, overriding, record, and replaying input modalities, output modalities, activations, and weights
+
+- federate user access to the above features
 
 
-## AInimal interface
+**TODO** AInimals are only half the story. You need environments as well. It should be easy to provision both.
 
-AInimal Zookeeper expects all AInimals to be supplied in a .zip containing a single AInimal pickle `<ainimal_name>.py` and any other necesary files. The server will look for a `<AnimalName>` (CamelCase) class in that file and use it to instantiate the AInimal on the local or on a remote server.
+## **AI**nimal interface
 
-The `<AnimalName>` class should conform to the `ainimal.Ainimal` interface:
+To facilitate the diverse interaction schemes employed in real-world AI systems, **AI**nimal :tiger: Zookeeper expects all models to be supplied in a .zip containing a single pickle `<model_name>.py` along with any other necesary files. The server will look for a `AInimal` class in that file and use it to instantiate the AInimal on the local or on a remote server.
+
+The `AInimal` class should conform to the `ainimal_zookeeper.AInimal` interface:
 ```python
 # AInimal interface
-# ainimal/Ainimal
+# ainimal_zookeeper/AInimal
 
-class Ainimal:
+class AInimal:
+
+  def __init__(self, save_path: str):
+    # initialize the AInimal
+    # save_path: path to the directory where the AInimal was saved
+    raise NotImplementedError()
 
   def forward(self, inputs: dict) -> dict:
     # forward inputs through the AInimal
-    # inputs: dict of input modalities
-    # returns: dict of output modalities
-    raise NotImplementedError
+    # inputs: (dict[str, pytree[Tensor]]) of input modalities
+    # returns: (dict[str, pytree[Tensor]]) of output modalities
+    raise NotImplementedError()
 
   def train(self, traj: list[timestep]) -> 'b':
     # train the AInimal on a trajectory
-    # traj: list of timesteps
+    # traj: list of timesteps (dm_env.Timestep TODO get actual name)
     # returns: loss for each batch element in traj after training
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def save(self, path: str) -> None:
-    # save the AInimal to a file
+    # saves the model and any other necessary files to 
+    # a directory at `path`. AInimal Zookeeper will create
+    # and zip the directory.
     # path: path to save the AInimal to
-    raise NotImplementedError
+    raise NotImplementedError()
 
-  @property
-  def input_modalities(self) -> dict[str, Modality]:
-    # returns: dict of input modalities
-    raise NotImplementedError
-
-  @property
-  def output_modalities(self) -> dict[str, Modality]:
-    # returns: dict of output modalities
-    raise NotImplementedError
+  ## TODO put modalities back in
 
   @property
   def state(self) -> dict:
     # returns: dict of AInimal state: I.E.: Anything you want zookeeper to 
-    # be able to inspect (optimizer ema's, hidden layer activations, 
-    # recurrent state, weights, etc.)
-    raise NotImplementedError
+    # be able to inspect, record, and possibly control (e.g.: most recent inputs
+    # and outputs, optimizer ema's, hidden layer activations, recurrent state, weights, etc.)
+    raise NotImplementedError()
 ```
 
-`Modality` is used to establish a common human and machine interpretation of a tensor. For example, GIVE AN EXAMPLE HERE.  `Modality` objects define a combination of `structure` (flat, set, sequence, grid, or graph), `representation` (binary, categorical, integer, real), and `context` ("natural:text", "computer:screen", or other natural language tag)    
+
+## TODO make separate modalities project. Use the modalities definition from the other repo. Make javascript and python definitions. THen make it accessible on pip and npm. 
+`modalities.Modality` is used to establish a common human and machine interpretation of a tensor. For example, GIVE AN EXAMPLE HERE.  `ainimal_zookeeper.Modality` objects define a combination of `structure` (flat, set, sequence, grid, or graph), `representation` (binary, categorical, integer, real), and `context` ("natural:text", "computer:screen", or other natural language tag)    
 
 ## Client
 
