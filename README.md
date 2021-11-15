@@ -1,5 +1,7 @@
 # **AI**nimal :tiger: Zookeeper
 
+**I think the server is useless. Just make a client and utilities to make a graphQL api about tensorflow and pytorch models. Implement auth on a per-project (not via ainimal) basis**
+
 **THIS IS AN IDEA-IN-PROGRESS.**
 
 A client and server to facilitate observing, interacting with, and managing AI systems in the wild.
