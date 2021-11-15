@@ -22,7 +22,7 @@ As heterogeneous, distributed, and exoitc AI systems (**AI**nimals :tiger:) cont
 
 - Design flow: server.js --> graphQL schema --> client 
 
-- Instead of using a config file, custom API routes, and middleware, the entire server is defined in high-level nodejs objects and functions. The server instance is exposed to the client via a graphQL API for direct query (alothough most variables are hidden from unauthorized users). To get the server running for a new use-case, all you have to do is change the server code (also the secrets). The server file looks like this:
+- Instead of using a config file, custom API routes, and middleware, the entire server is defined in high-level nodejs objects and functions. The server instance is exposed to the client via a graphQL API for direct query (alothough most variables are hidden from unauthorized users). To get the server running for a new use-case, all you have to do is change the high-level server code (also the secrets). The server file looks like this:
 ```javascript
 // server/main.js
 server = Server({
@@ -63,16 +63,17 @@ server = Server({
       max_instances: 10,
     })  // the server has good inference for gym.Env, dm_env.Env and a few other standard environment types.
   ],
-  compute_providers: [
-    LocalComputeProvider({...}),
-    ...  // GCP AWS etc. where python launchpad can deploy nodes
+  compute_nodes: [ // anything that can provide nodes for `launchpad`, `tf`, `torch`, `jax`, or other frameworks to run on
+    Local(['CPU:1', 'CPU:2', 'CPU:3', 'GPU:0']),
+    ...  // GCP AWS etc. server provisioners
   ],
 });
 
+// you might also package other process invokations into the server if your working on something small
 process.start(`jupyter lab --ip '*' --port 8081 --no-browser --allow-root --NotebookApp.token=''`);
-process.start(`python3 -m http.server 8082`);
 process.start(`tensorboard ...`);
-process.start(`wandb ...`);
+process.start(`wandb serve ...`);  // this command may not exist
+process.start(`python3 -m http.server 8082`);
 process.start(`python3 limboid_ros.py --port ${process.env.ROS_PORT}`);
 
 server.listen(process.env.PORT || 3000);
@@ -80,7 +81,7 @@ server.listen(process.env.PORT || 3000);
 
 - Checkpoints are tags in the git graph for a given model. Only some VC providers allow you to view ALL repositories unqualified. Most VC providers let you view by account or by search.
 
-- The server manages running models but they have to be in python and the act, train, input_spec/modality, and output_spec/modality must be defined. The server tries to infer these from the model code and its associated `AInimalAgent.from_pyfunc/tf_func/keras_model/ptorch_module/TODO` functions, but you can be maximally explicit by directly subclassing the `AInimal` class. If you want the client to enter parameters when launching a model, include a static attribute named `AINIMAL_PARAMETERS` of the type `list[dict[str,any]]` in the model class. This only works for python class models -- not saved model file formats. It should look something like:
+- The server manages running models but they have to be in python and the act, train, input_spec/modality, and output_spec/modality must be defined. The server tries to infer these from the model code and its associated `AInimalAgent.from_pyfunc/tf_func/keras_model/ptorch_module/TODO` functions, but you can be maximally explicit by directly subclassing the `AInimal` class. If you want the client to enter parameters when launching a model, include a static attribute named `AINIMAL_PARAMETERS` of the type `list[dict[str,any]]` (or similar typing for js or c++) in the model class. This only works for python, javascript, and c++ class models -- not saved model file formats. It should look something like:
 
 ```python
 class MyModel(AInimal.Agent):
@@ -109,11 +110,11 @@ class MyModel(AInimal.Agent):
     ...
 
   def save(self, path: str) -> None:
-    # try: pickle.dump(self, open(path, 'wb'))
+    # quick solution: pickle.dump(self, open(path, 'wb'))
     ...
 
   def load(self, path: str) -> None:
-    # try: self = pickle.load(open(path, 'rb'))
+    # quick solution: self = pickle.load(open(path, 'rb'))
     ...
 
   @property
@@ -130,6 +131,8 @@ class MyModel(AInimal.Agent):
 ```
 
 - Environments are defined in a similar way. They can be loaded from common third-party frameworks too. (See `AInimal.Environment`)
+
+- Zookeeper selects a driver implementation that best fits the model and environment languages. If both are written in python, the python driver is used. If both are written in javascript, the javascript driver is used. If both are written in c++, the c++ driver is used. If the language is mixed, the python driver is used. (Only pure python is currently supported) 
 
 - The client provides a a minimally complex, user-friendly interface to the AI models and environments running on the server. 
   - Example: If the server does not offer the client the ability to create environments or launch models, those pages are not shown.
