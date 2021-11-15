@@ -1,5 +1,7 @@
 # **AI**nimal :tiger: Zookeeper
 
+**PLEASE SEE KEYPRINCIPLES2**
+
 **THIS IS AN IDEA-IN-PROGRESS.**
 
 A client and server to facilitate observing, interacting with, and managing AI systems in the wild.
@@ -17,6 +19,115 @@ As heterogeneous, distributed, and exoitc AI systems (**AI**nimals :tiger:) cont
 - observe, override, record, and replaying input modalities, output modalities, activations, and weights
 
 - federate user access to the above features
+
+## Key Principles (idea 2)
+
+- Instead of using a config file, custom API routes, and middleware, the entire server is defined in high-level nodejs objects and functions.
+
+- The server instance is exposed to the client via a graphQL API for direct query (alothough most variables are hidden from unauthorized users).
+
+- Checkpoints are tags in the git graph for a given model. Only some vc providers allow you to view ALL repositories unqualified. Most vc providers let you view by account or by search. 
+
+- The client presents a minimally complex UI to interface with the server.
+
+- To get the server running for a new use-case, all you have to do is change the server code and put your secrets in the .env.local file.
+
+- The server manages running models but they have to be in python and the act, train, input_spec/modality, and output_spec/modality must be defined. The server tries to infer these from the model code, but you can be maximally explicit by subclassing the `AInimal` class.
+
+- If you want the client to enter parameters when launching a model, include a static `list[dict[str,any]]` named `AINIMAL_PARAMETERS` in the model class. It should look something like:
+
+```python
+class MyModel(AInimal):
+  AINIMAL_PARAMETERS = [
+    {
+      "name": "learning_rate",
+      "type": "float",
+      "default": 0.001,
+      "description": "The learning rate for the optimizer."
+    },
+    {
+      "name": "batch_size",
+      "type": "int",
+      "default": 32,
+      "description": "The batch size for the model."
+    }
+  ]
+
+  def __init__(self, learning_rate, batch_size):
+    ...
+  
+  def forward(self, inputs: dict) -> dict:
+    ...
+
+  def train(self, traj: list[timestep]) -> 'b':
+    ...
+
+  def save(self, path: str) -> None:
+    ...
+
+  def load(self, path: str) -> None:
+    ...
+
+  @property
+  def input_modalities(self) -> dict:
+    ...
+
+  @property
+  def output_modalities(self) -> dict:
+    ...
+
+  @property
+  def state(self) -> dict:
+    ...
+```
+
+Environments are defined in a similar way. (TODO make AInimal.Env) (TODO change AInimal to AInimal.Agent)
+
+Example:
+```javascript
+// server/main.js
+server = Server({
+  port: 3000,
+  authentication_providers: [
+    BasicAuthenticationProvider({
+      database: Database | path_to_json_file,
+      secret: process.env.JWT_SECRET,
+    }),
+    GoogleAuthenticationProvider({
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+    }),
+    ...
+  ],
+  authorization_provider: 
+    ...  // determines who can see, edit, delete, etc. what
+  ,
+  model_providers: [
+    LocalModelProvider({
+      root: path_to_models,
+    }),
+    GithubModelProvider({
+      token: process.env.GITHUB_TOKEN,
+    }),
+    ...
+  ],
+  environments: [
+    PythonEnvironment({
+      path: path_to_python_env,
+      max_instances: 10,
+      class_name: "MyModel",
+      step_function: "step",  // you don't have to specify this for an ainimal class. Also the server has good inference for gym.Env, dm_env.Env and a few other standard environment types.
+    }),
+  ],
+  compute_providers: [
+    LocalComputeProvider({...}),
+    ...  // GCP AWS etc. where python launchpad can deploy nodes
+  ],
+});
+
+server.listen(process.env.PORT || 3000);
+```
 
 ## Key Principles
 
@@ -205,7 +316,21 @@ class AInimal:
     # path: path to save the AInimal to
     raise NotImplementedError()
 
-  ## TODO put modalities back in
+  def load(self, path: str) -> None:
+    # load a checkpoint into this model instance from `path`
+    raise NotImplementedError()
+
+  @property
+  def input_modalities(self) -> dict:
+    # returns a dictionary of input modalities
+    # returns: (dict[str, Modality])
+    raise NotImplementedError()
+
+  @property
+  def output_modalities(self) -> dict:
+    # returns a dictionary of output modalities
+    # returns: (dict[str, Modality])
+    raise NotImplementedError()
 
   @property
   def state(self) -> dict:
