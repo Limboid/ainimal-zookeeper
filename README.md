@@ -132,7 +132,7 @@ class MyModel(AInimal.Agent):
 
 - Environments are defined in a similar way. They can be loaded from common third-party frameworks too. (See `AInimal.Environment`)
 
-- Zookeeper selects a driver implementation that best fits the model and environment languages. If both are written in python, the python driver is used. If both are written in javascript, the javascript driver is used. If both are written in c++, the c++ driver is used. If the language is mixed, the python driver is used. (Only pure python is currently supported) 
+- Zookeeper selects a **driver** implementation that best fits the model and environment languages. If both are written in python, the python driver is used. If both are written in javascript, the javascript driver is used. If both are written in c++, the c++ driver is used. If the language is mixed, the python driver is used. (Only pure python is currently supported). The driver exposes a graphQL API for interfacing with the model and environment. This endpoint is chained into the server's graphQL schema.
 
 - The client provides a a minimally complex, user-friendly interface to the AI models and environments running on the server. 
   - Example: If the server does not offer the client the ability to create environments or launch models, those pages are not shown.
