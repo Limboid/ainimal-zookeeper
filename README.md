@@ -1,27 +1,178 @@
 # **AI**nimal :tiger: Zookeeper
 
+**THIS IS AN IDEA-IN-PROGRESS.**
+
 A client and server to facilitate observing, interacting with, and managing AI systems in the wild.
 
 As heterogeneous, distributed, and exoitc AI systems (**AI**nimals :tiger:) continue to pervade the real world, it is incrinsingly important to observe, care for, and stay in touch with them. **AI**nimal :tiger: Zookeeper provides a client and server to facilitate this interaction with the following features:
 
-- a cross-platform (iOS, Android, web, desktop) react-native client which allows users to:
+- a cross-platform (iOS, Android, web, desktop) react-native/flutter client which allows users to:
 
-- launch, terminate, save, delete of models
+- launch, pause, and terminate model instances; save and restore from checkpoints
 
-- change running state (online training and inference, offline training only, online inference only, paused) of launched models 
+- change running state of launched models (training, inference, both, none) 
 
 - view saved model architecture, parameters, and attributes
 
-- observe, overriding, record, and replaying input modalities, output modalities, activations, and weights
+- observe, override, record, and replaying input modalities, output modalities, activations, and weights
 
 - federate user access to the above features
 
+## Key Principles
 
-**TODO** AInimals are only half the story. You need environments as well. It should be easy to provision both.
+- Operators edit the AInimal Server's config file to define what models, model repositories, checkpoints, environments, auth schemes, and compute infrastructure will be used by the server.
 
-## **AI**nimal interface
+- Users use an AInimal Client to connect to an AInimal Server. Then they can observe, interact with, and manage AI systems managed by that server.
 
-To facilitate the diverse interaction schemes employed in real-world AI systems, **AI**nimal :tiger: Zookeeper expects all models to be supplied in a .zip containing a single pickle `<model_name>.py` along with any other necesary files. The server will look for a `AInimal` class in that file and use it to instantiate the AInimal on the local or on a remote server.
+- The AInimal Server exposes a graphQL API to allow developers to query and mutate the server's state.
+
+## Customizable use-cases
+
+The config file can be in json or yaml format. I have mixed alternate allowable values in the examples below:
+
+```yaml
+server:
+  host: localhost
+  port: 8000
+  https: false
+
+
+max_envs: 1  # max number of environments to run concurrently
+envs:
+
+  - name: Env Name
+    path: /path/to/env.py
+    type: gym.Env | dm_env.Env
+    env_name: 'EnvName'
+    max_connected: 1  # only one agent connected at a time (default)
+    max_instances: -1  # no limit, default
+    create_params:
+      - name: user_value1
+        display: Maximum speed of agents
+        type: str
+        default: default_value
+    init_params:
+      user_param: "${params.user_value1}"
+      gcloud_api_key: "${env.gcloud_api_key}"
+      gcloud_project: "${env.gcloud_project}"
+
+  - name: EnvName
+    path: /path/to/env.py
+    type: python_class
+    class_name: EnvName
+    max_instances: -1,  # no limit, default
+    create_params:
+      - name: user_value1
+        display: Maximum speed of agents
+        type: str
+        default: default_value
+    init_params:
+      user_param: "${params.user_value1}"
+      gcloud_api_key: "${env.gcloud_api_key}"
+      gcloud_project: "${env.gcloud_project}"
+
+  - name: Limboid
+    type: pyros
+    max_instances: 1,
+    autostart: true,  # automatically init the Limboid environment
+    init_params:
+      port: 12345  # ROS communication port
+
+
+max_models: 10  # max number of models that can be launched
+
+# you can specify individual models or a model repository
+models: 
+
+  - name: ModelName
+    type: .tflite | .onnx | .h5 | .keras | .pytorch | .tensorflow | TODO 
+    path: /path/to/model.h5
+
+  - name: ModelName
+    type: python_class | AInimal | tfagents.Agent | acme.Agent | ptl.Module | TODO
+    path: /path/to/model.py
+    class_name: ModelName
+    act_func: act  # default
+    train_func: train  # default
+    input_modalities_func: input_modalities | obs_spec  # None default
+    output_modalities_func: output_modalities | act_spec  # None default
+    save_func: save  # None default
+    load_func: load  # None default
+    create_params:
+      - name: depth
+        display: Number of hidden layers
+        type: int
+        range: [1, 10]
+        default: 5
+    init_params: 
+      depth: "${params.depth}"
+
+
+model_hubs:  # model hubs to not necesarily support writing
+
+  # if you just have a fixed set of models, package them in a model's 
+  # directory and specify the path to the directory under `local_filesystem`
+  - type: local_filesystem
+    root: /path/to/models
+  - type: gcloud_bucket | aws_s3
+    bucket: bucket-name
+  - type: huggingface
+    view_qualifier:  # optional qualifier to only display a subset of all models. Leave blank to display all models.
+      domain: limboid
+      owner: MyName
+    account: username  # password stored in .env.local
+  - type: github | tfhub | pytorch_hub
+    account: username
+    password: ${process.ENV.GITHUB_PASSWORD}
+    
+# checkpoints are stored wherever the model is saved
+
+
+no_auth: false  # if true, no authentication is required
+authentication_providers:
+  - type: jwt
+    public_can_create_account: false  # if true, unauthenticated users can create accounts
+    admin_can_create_account: false  # if true, admin can create accounts
+
+    # you can use a json file OR a database to store users and hashes
+    # pick one OR the other, NOT BOTH
+    db_path: /path/to/jwt.db 
+    db_address: sqlite:///path/to/jwt.db
+
+    jwt_secret: ${process.ENV.JWT_SECRET}
+    jwt_algorithm: HS256
+    jwt_issuer: ${process.ENV.JWT_ISSUER}
+    jwt_audience: ${process.ENV.JWT_AUDIENCE}
+    jwt_expires_in: ${process.ENV.JWT_EXPIRES_IN}
+    jwt_not_before: ${process.ENV.JWT_NOT_BEFORE}
+    jwt_subject: ${process.ENV.JWT_SUBJECT}
+    jwt_jti: ${process.ENV.JWT_JTI}
+
+  - type: google | microsoft | amazon | github | gitlab | bitbucket | TODO
+    key: ${process.ENV.GOOGLE_API_KEY}
+    secret: ${process.ENV.GOOGLE_API_SECRET}
+
+
+authorization_provider:
+  type: json_file
+  path: /path/to/auth.json
+  # you can use a json file OR a database
+  # pick one OR the other, NOT BOTH
+
+
+launch_etc:  # other processes to launch when the server starts
+  - cmd: jupyter lab --ip '*' --port 8081 --no-browser --allow-root --NotebookApp.token=''
+  - cmd: python3 -m http.server 8082
+  - cmd: python3 limboid_ros.py --port $ROS_PORT
+```
+
+
+## Minimum complexity interface
+
+The client provides a user-friendly interface to the AI models and environments running on the server.
+- If the server does not offer the client the ability to create environments or launch models, the corresponding user interface automatically simplifies. 
+- This might be because of permissions rather than ability. Operators might be presented with a more complex user interface than regular users. Obviously, unauthenticated users viewing publicly-obervable computatra will not be presented with joystick controllers, keyboards, etc.
+- This might be because the model is a pure python class (causing local variables and operations to be hidden). Only Agent model types can be trained. Most agents types do not provide much modality information so the UI cannot make joystick, keyboard, etc assumptions.
 
 The `AInimal` class should conform to the `ainimal_zookeeper.AInimal` interface:
 ```python
@@ -65,9 +216,6 @@ class AInimal:
 ```
 
 
-## TODO make separate modalities project. Use the modalities definition from the other repo. Make javascript and python definitions. THen make it accessible on pip and npm. 
-`modalities.Modality` is used to establish a common human and machine interpretation of a tensor. For example, GIVE AN EXAMPLE HERE.  `ainimal_zookeeper.Modality` objects define a combination of `structure` (flat, set, sequence, grid, or graph), `representation` (binary, categorical, integer, real), and `context` ("natural:text", "computer:screen", or other natural language tag)    
-
 ## Client
 
 The client provides a cross platform interface for interacting with one or more Zookeeper servers. You can access the client in several ways:
@@ -81,6 +229,7 @@ The client provides a cross platform interface for interacting with one or more 
 - (Coming soon:) Visit `https://computatrum.io/ainimal_zookeeper` in your browser.
 
 Next connect to a running AInimal Zookeeper server by entering the `server_url` and `server_port`. You may be prompted for a username and password.
+
 
 ## Server
 
@@ -126,8 +275,3 @@ python3 -m ainimal_zookeeper.server  # call with --help for options
 ```
 
 4. For deployment, edit the `server/.env` config file to enable authentication and set limits.
-
-## TODO
-
-[ ] provide some unified way to specify training routines on the server as well (or make the server able to dispatch training nodes)
-[ ] give jupyterlab access to server (no, actually remote_computer_control_nodes should do this)
