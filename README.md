@@ -20,6 +20,8 @@ As heterogeneous, distributed, and exoitc AI systems (**AI**nimals :tiger:) cont
 
 ## Key Principles
 
+- Design flow: server.js --> graphQL schema --> client 
+
 - Instead of using a config file, custom API routes, and middleware, the entire server is defined in high-level nodejs objects and functions. The server instance is exposed to the client via a graphQL API for direct query (alothough most variables are hidden from unauthorized users). To get the server running for a new use-case, all you have to do is change the server code (also the secrets). The server file looks like this:
 ```javascript
 // server/main.js
@@ -69,6 +71,8 @@ server = Server({
 
 process.start(`jupyter lab --ip '*' --port 8081 --no-browser --allow-root --NotebookApp.token=''`);
 process.start(`python3 -m http.server 8082`);
+process.start(`tensorboard ...`);
+process.start(`wandb ...`);
 process.start(`python3 limboid_ros.py --port ${process.env.ROS_PORT}`);
 
 server.listen(process.env.PORT || 3000);
@@ -76,7 +80,7 @@ server.listen(process.env.PORT || 3000);
 
 - Checkpoints are tags in the git graph for a given model. Only some VC providers allow you to view ALL repositories unqualified. Most VC providers let you view by account or by search.
 
-- The server manages running models but they have to be in python and the act, train, input_spec/modality, and output_spec/modality must be defined. The server tries to infer these from the model code and its associate `AInimalAgent.from_*` functions, but you can be maximally explicit by directly subclassing the `AInimal` class. If you want the client to enter parameters when launching a model, include a static attribute named `AINIMAL_PARAMETERS` of the type `list[dict[str,any]]` in the model class. This only works for python class models -- not saved model file formats. It should look something like:
+- The server manages running models but they have to be in python and the act, train, input_spec/modality, and output_spec/modality must be defined. The server tries to infer these from the model code and its associated `AInimalAgent.from_pyfunc/tf_func/keras_model/ptorch_module/TODO` functions, but you can be maximally explicit by directly subclassing the `AInimal` class. If you want the client to enter parameters when launching a model, include a static attribute named `AINIMAL_PARAMETERS` of the type `list[dict[str,any]]` in the model class. This only works for python class models -- not saved model file formats. It should look something like:
 
 ```python
 class MyModel(AInimal.Agent):
@@ -132,7 +136,7 @@ class MyModel(AInimal.Agent):
   - Example: If the user is an operator, the client can see the model repositories and can launch models.
   - Example: If the user is an observer, the client can only view the model.
   - Example: If the modalitiy are not defined, the client only recieves a tensor representation of the state.
-  - Example: If the `train` function is not defined, the operator can only run the model.
+  - Example: If the `train` function is not defined on an agent, the operator does not observe a corresponding button.
 
 ## Client
 
@@ -147,49 +151,3 @@ The client provides a cross platform interface for interacting with one or more 
 - (Coming soon:) Visit `https://computatrum.io/ainimal_zookeeper` in your browser.
 
 Next connect to a running AInimal Zookeeper server by entering the `server_url` and `server_port`. You may be prompted for a username and password.
-
-
-## Server
-
-The server can run as a collection of cloud services or as a standalone server.
-
-### Getting Started: GCP
-
-The entire Zookeeper server is composed as a
-- storage bucket: for storing recordings and AInimal pickles
-- cloud function and API endpoint: for receiving and processing frontend http requests
-- kubernetes deployment cluster: for running the AInimal processes
-
-1. For deployment, edit the `server/.env` config file to enable authentication and set limits.
-
-2. Use the gcloud client to deploy the server,
-```bash
-TODO
-```
-
-### Getting Started: Local
-
-The local deployment server is sturctured similarly to the GCP deployment server.
-- storage directory: for storing recordings and AInimal pickles
-- local server: for receiving and processing frontend http requests
-- docker deamon: for running the AInimal processes in docker containers
-
-To deploy locally,
-1. Install dependencies:
-- docker
-- python dependencies:
-
-```bash
-cd server
-pip install .
-```
-
-2. Add AInimal pickles to the `server/ainimals` directory.
-
-3. Run the server:
-```bash
-cd server
-python3 -m ainimal_zookeeper.server  # call with --help for options
-```
-
-4. For deployment, edit the `server/.env` config file to enable authentication and set limits.
