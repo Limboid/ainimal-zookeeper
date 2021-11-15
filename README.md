@@ -160,3 +160,8 @@ Next connect to a running AInimal Zookeeper server by entering the `server_url` 
 - computatrum.io lets you run, interact with, reinforce online, fine-tune, and distribute (with optional payment) computatrum multi-agent-network models. It will be like a web service except instead of servers, you launch computatra that have been trained for 3d animation, programming, research, and other tasks as well as base-models. 
 
 - limboid and teleboid robots might get away with only an Android app and distributed microprocessors, but they can still expose a similar graphQL endpoint to allow re-using the client. (I don't see why you'd even need the server for this since models can't be launched on the fly anyway and they are distributed between the Android and cloud.) The client could connect to an Android-local server for lower network requirements or the cloud server for global access.
+
+
+## Notes
+
+- The server design feels restrictive. However I can consider it as a good starting point for computatrum.io at least. 
