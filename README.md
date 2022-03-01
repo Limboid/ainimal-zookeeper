@@ -1,5 +1,9 @@
 # **AI**nimal :tiger: Zookeeper
 
+:construction: **This repository is under construction.** :construction: Stable release coming this Summer 2022.
+
+Want to contribute? Check out the GitHub container repository [Limboid/the-artificial-ecosystem](https://github.com/Limboid/the-artificial-ecosystem) for this project.
+
 **I think the server is useless. Just make a client and utilities to make a graphQL api about tensorflow and pytorch models. Implement auth on a per-project (not via ainimal) basis**
 
 **THIS IS AN IDEA-IN-PROGRESS.**
